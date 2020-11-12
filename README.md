@@ -40,6 +40,7 @@ Using an S3 bucket of your choice it will import the box and produce AMIs in thr
 }
     ```
 - Fast upstream bandwidth as you will be uploading the image to s3!
+- Requirements has awscli you might use one provided by your distro but it have to be configured with `aws configure`.
 
 ### The required parameters are:
 
