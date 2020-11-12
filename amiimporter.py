@@ -60,7 +60,7 @@ def vbox_to_vmdk(p):
 
         vmdkfile = [file for file in os.listdir(p.tempdir) if '.vmdk' in file][0]
 
-    except subprocess.CalledProcessError, errVal:
+    except subprocess.CalledProcessError as errVal:
         print("Error while extracting supplied vbox file: {}".format(p.vboxfile))
         print("Reported error is: {}".format(errVal))
         sys.exit(1)
@@ -79,7 +79,6 @@ def upload_vmdk_to_s3(p, vmdkfile):
         sys.stdout.flush()
 
     logging.info("Uploading {} to s3".format(vmdkfile))
-    # boto2 doesn't have import-image yet; use aws cli command until we switch to boto3
     if not p.s3key:
         (osname, osver, creationdate) = parse_vbox_name(os.path.basename(p.vboxfile))
         s3file = "temp-hvm-{}-{}-{}".format(osname, osver, creationdate)
@@ -90,7 +89,7 @@ def upload_vmdk_to_s3(p, vmdkfile):
     AWS_SECRET_ACCESS_KEY_ID = os.environ.get('AWS_SECRET_ACCESS_KEY_ID')
 
     s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID,
-                             AWS_SECRET_ACCESS_KEY_ID)
+                              AWS_SECRET_ACCESS_KEY_ID)
 
     bucket = s3conn.get_bucket(p.s3bucket, validate=False)  # see https://github.com/boto/boto/issues/2741
     bucket_location = bucket.get_location()
@@ -110,7 +109,7 @@ def delete_s3key(p):
 
     s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID,
                              AWS_SECRET_ACCESS_KEY_ID)
-    bucket = s3conn.get_bucket(p.s3bucket, validate=False)  # see https://github.com/boto/boto/issues/2741
+    bucket = s3conn.get_bucket(p.s3bucket)
     bucket_location = bucket.get_location()
     if bucket_location:
         conn = boto.s3.connect_to_region(bucket_location)
@@ -173,7 +172,7 @@ def import_s3key_to_ami(p):
     for region in ['eu-central-1', 'us-west-2', 'us-east-1']:
         ec2conn = ec2.connect_to_region(region)
         amis_created[region] = ec2conn.copy_image(p.region, temporary_ami, name=p.s3key, description=p.s3key)
-        print "Created {} in region {}".format(amis_created[region].image_id, region)
+        print("Created {} in region {}".format(amis_created[region].image_id, region))
 
     logging.info("Deregistering temporary AMI {}".format(temporary_ami))
     ec2conn = ec2.connect_to_region(p.region)
@@ -209,6 +208,7 @@ def main(opts):
     import_s3key_to_ami(opts)
     delete_s3key(opts)
     cleanup_temp_dir(opts)
+
 
 if __name__ == '__main__':
     main(make_opt_parser().parse_args(sys.argv[1:]))
